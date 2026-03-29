@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import EntryLayout from "../../layouts/EntryLayout.astro";
+
+export async function getStaticPaths() {
+  const stories = await getCollection("stories");
+
+  return stories.map((entry: CollectionEntry<"stories">) => ({
+    params: { slug: entry.slug },
+    props: { entry }
+  }));
+}
+
+interface Props {
+  entry: CollectionEntry<"stories">;
+}
+
+const { entry } = Astro.props as Props;
+const { Content } = await entry.render();
+
+const details = [
+  { label: "Reading time", value: entry.data.readingTime },
+  { label: "Age range", value: entry.data.ageRange },
+  { label: "Genre", value: entry.data.genre }
+];
+---
+
+<EntryLayout entry={entry} sectionLabel="Stories" sectionHref="/stories" details={details}>
+  <Content />
+</EntryLayout>

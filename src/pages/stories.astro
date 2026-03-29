@@ -1,11 +1,28 @@
 ---
-import '../layouts/BaseLayout.astro';
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import EntryCard from "../components/EntryCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { sortByDateDesc } from "../utils/content";
+
+const stories: CollectionEntry<"stories">[] = sortByDateDesc(await getCollection("stories"));
 ---
 
-<BaseLayout>
-  <h2>Stories</h2>
-  <p>Explore the wonderful stories created by Anika!</p>
-  <section>
-    <p>This is where stories will go.</p>
+<BaseLayout title="Stories" description="Imaginative stories I have written and collected here.">
+  <section class="section-hero">
+    <p class="eyebrow">Stories</p>
+    <h1>Little adventures with big imaginations.</h1>
+    <p class="lead">
+      These are my original stories full of friendly creatures, magical places,
+      and moments that feel especially nice to read aloud.
+    </p>
+  </section>
+
+  <section class="section-block">
+    <div class="entry-grid">
+      {stories.map((story) => (
+        <EntryCard entry={story} href={`/stories/${story.slug}/`} sectionLabel="Story" />
+      ))}
+    </div>
   </section>
 </BaseLayout>

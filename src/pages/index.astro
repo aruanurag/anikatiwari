@@ -1,0 +1,126 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import CollectionCard from "../components/CollectionCard.astro";
+import EntryCard from "../components/EntryCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { sortByDateDesc } from "../utils/content";
+
+const stories: CollectionEntry<"stories">[] = sortByDateDesc(await getCollection("stories"));
+const artworks: CollectionEntry<"artworks">[] = sortByDateDesc(await getCollection("artworks"));
+const recipes: CollectionEntry<"recipes">[] = sortByDateDesc(await getCollection("recipes"));
+const posts: CollectionEntry<"posts">[] = sortByDateDesc(await getCollection("posts"));
+
+if (!stories.length || !artworks.length || !recipes.length || !posts.length) {
+  throw new Error("Expected seeded content for all homepage collections.");
+}
+
+const featuredStory = stories.find((entry) => entry.data.featured) ?? stories[0];
+const featuredArtwork = artworks.find((entry) => entry.data.featured) ?? artworks[0];
+const featuredRecipe = recipes.find((entry) => entry.data.featured) ?? recipes[0];
+const featuredPost = posts.find((entry) => entry.data.featured) ?? posts[0];
+
+const spotlight = {
+  story: featuredStory,
+  artwork: featuredArtwork,
+  recipe: featuredRecipe,
+  post: featuredPost
+};
+
+const latestEntries = [
+  { entry: spotlight.story, href: `/stories/${spotlight.story.slug}/`, sectionLabel: "Story" },
+  { entry: spotlight.artwork, href: `/artworks/${spotlight.artwork.slug}/`, sectionLabel: "Artwork" },
+  { entry: spotlight.recipe, href: `/recipes/${spotlight.recipe.slug}/`, sectionLabel: "Recipe" },
+  { entry: spotlight.post, href: `/posts/${spotlight.post.slug}/`, sectionLabel: "Post" }
+];
+---
+
+<BaseLayout description="A warm and creative home for my stories, artwork, recipes, and thoughtful posts.">
+  <section class="hero">
+    <div class="hero-copy reveal">
+      <p class="eyebrow">Welcome to my world</p>
+      <h1>Stories to tell, colors to share, recipes to try, and little ideas to keep.</h1>
+      <p class="lead">
+        This is my little corner of the internet for stories, cheerful artwork, favorite
+        recipes, and playful posts about the things I love making.
+      </p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="/stories">Start with the stories</a>
+        <a class="button button-secondary" href="/artworks">See the artwork</a>
+      </div>
+    </div>
+
+    <aside class="hero-panel reveal">
+      <p class="panel-label">Featured right now</p>
+      <h2>{spotlight.story.data.title}</h2>
+      <p>{spotlight.story.data.summary}</p>
+      <a class="inline-link" href={`/stories/${spotlight.story.slug}/`}>Read the featured story</a>
+
+      <div class="mini-stack">
+        <div class="mini-card" style={`--mini-accent: ${spotlight.artwork.data.accent};`}>
+          <span>Newest artwork</span>
+          <strong>{spotlight.artwork.data.title}</strong>
+        </div>
+        <div class="mini-card" style={`--mini-accent: ${spotlight.recipe.data.accent};`}>
+          <span>Kitchen favorite</span>
+          <strong>{spotlight.recipe.data.title}</strong>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="section-block reveal">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Explore the collections</p>
+        <h2 class="section-title">A home for four kinds of creativity</h2>
+      </div>
+    </div>
+
+    <div class="collection-grid">
+      <CollectionCard
+        href="/stories"
+        title="Stories"
+        kicker="Dreamed up adventures"
+        description="Short tales, whimsical characters, and thoughtful little worlds I am building one page at a time."
+        accent="#f4a261"
+      />
+      <CollectionCard
+        href="/artworks"
+        title="Artworks"
+        kicker="Color and texture"
+        description="Paintings, sketches, and visual experiments full of bright palettes and playful details."
+        accent="#7bb8f5"
+      />
+      <CollectionCard
+        href="/recipes"
+        title="Recipes"
+        kicker="Made with care"
+        description="Sweet treats, cozy snacks, and kitchen favorites I love sharing with family and friends."
+        accent="#f28f97"
+      />
+      <CollectionCard
+        href="/posts"
+        title="Posts"
+        kicker="Notebook moments"
+        description="Reflections, behind-the-scenes notes, and small updates about what I have been making lately."
+        accent="#82c8a0"
+      />
+    </div>
+  </section>
+
+  <section class="section-block reveal">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Fresh picks</p>
+        <h2 class="section-title">A favorite from each collection</h2>
+      </div>
+    </div>
+
+    <div class="entry-grid">
+      {latestEntries.map((item) => (
+        <EntryCard entry={item.entry} href={item.href} sectionLabel={item.sectionLabel} />
+      ))}
+    </div>
+  </section>
+</BaseLayout>

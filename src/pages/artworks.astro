@@ -1,11 +1,28 @@
 ---
-import '../layouts/BaseLayout.astro';
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import EntryCard from "../components/EntryCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { sortByDateDesc } from "../utils/content";
+
+const artworks: CollectionEntry<"artworks">[] = sortByDateDesc(await getCollection("artworks"));
 ---
 
-<BaseLayout>
-  <h2>Artworks</h2>
-  <p>Discover the beautiful artworks by Anika!</p>
-  <section>
-    <p>This is where artworks will go.</p>
+<BaseLayout title="Artworks" description="Artwork and visual experiments I wanted to share.">
+  <section class="section-hero">
+    <p class="eyebrow">Artworks</p>
+    <h1>Colorful pieces made with patience, play, and curiosity.</h1>
+    <p class="lead">
+      These sketches, paintings, and bright visual experiments turn the ideas in my head
+      into something you can actually see.
+    </p>
+  </section>
+
+  <section class="section-block">
+    <div class="entry-grid">
+      {artworks.map((artwork) => (
+        <EntryCard entry={artwork} href={`/artworks/${artwork.slug}/`} sectionLabel="Artwork" />
+      ))}
+    </div>
   </section>
 </BaseLayout>

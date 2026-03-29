@@ -1,0 +1,56 @@
+---
+import type { CollectionEntry } from "astro:content";
+import BaseLayout from "./BaseLayout.astro";
+import { formatDate } from "../utils/content";
+
+type SupportedEntry =
+  | CollectionEntry<"stories">
+  | CollectionEntry<"artworks">
+  | CollectionEntry<"recipes">
+  | CollectionEntry<"posts">;
+
+interface DetailItem {
+  label: string;
+  value: string;
+}
+
+interface Props {
+  entry: SupportedEntry;
+  sectionLabel: string;
+  sectionHref: string;
+  details?: DetailItem[];
+}
+
+const { entry, sectionLabel, sectionHref, details = [] } = Astro.props;
+
+const pageDescription = entry.data.summary ?? `A ${sectionLabel.toLowerCase()} entry from ${sectionLabel}.`;
+const accent = entry.data.accent ?? "#f29c7a";
+---
+
+<BaseLayout title={entry.data.title} description={pageDescription}>
+  <article class="entry-shell">
+    <div class="entry-hero" style={`--entry-accent: ${accent};`}>
+      <a class="back-link" href={sectionHref}>Back to {sectionLabel}</a>
+      <p class="eyebrow">{sectionLabel}</p>
+      <h1 class="entry-title">{entry.data.title}</h1>
+      <p class="entry-summary">{entry.data.summary}</p>
+
+      <div class="detail-list">
+        <span class="detail-pill">
+          <strong>Published</strong>
+          <span>{formatDate(entry.data.date)}</span>
+        </span>
+        {details.map((detail) => (
+          <span class="detail-pill">
+            <strong>{detail.label}</strong>
+            <span>{detail.value}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+
+    <div class="prose-panel">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>

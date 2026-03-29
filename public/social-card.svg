@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Anika Tiwari social preview">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff6ea" />
+      <stop offset="100%" stop-color="#eef6ff" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f4a261" />
+      <stop offset="50%" stop-color="#f28f97" />
+      <stop offset="100%" stop-color="#7bb8f5" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" rx="36" />
+  <circle cx="180" cy="128" r="88" fill="#ffd9b8" opacity="0.9" />
+  <circle cx="1050" cy="520" r="120" fill="#dceeff" opacity="0.95" />
+  <path d="M860 120c120 28 184 108 196 214-98-42-214-34-298 34 8-112 44-214 102-248Z" fill="#fde1d1" />
+  <rect x="78" y="78" width="1044" height="474" rx="28" fill="#ffffff" opacity="0.66" />
+  <text x="110" y="250" fill="#2c2740" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="700">
+    Anika Tiwari
+  </text>
+  <text x="110" y="332" fill="#4d5567" font-family="Manrope, Arial, sans-serif" font-size="34">
+    Stories, artwork, recipes, and thoughtful little creations
+  </text>
+  <text x="110" y="390" fill="#4d5567" font-family="Manrope, Arial, sans-serif" font-size="34">
+    gathered into one warm and imaginative home.
+  </text>
+  <circle cx="1012" cy="182" r="72" fill="url(#accent)" />
+  <text x="986" y="205" fill="#ffffff" font-family="Manrope, Arial, sans-serif" font-size="68" font-weight="800">
+    A
+  </text>
+</svg>

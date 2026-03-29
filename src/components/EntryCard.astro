@@ -1,0 +1,36 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatDate } from "../utils/content";
+
+type SupportedEntry =
+  | CollectionEntry<"stories">
+  | CollectionEntry<"artworks">
+  | CollectionEntry<"recipes">
+  | CollectionEntry<"posts">;
+
+interface Props {
+  entry: SupportedEntry;
+  href: string;
+  sectionLabel: string;
+}
+
+const { entry, href, sectionLabel } = Astro.props;
+const accent = entry.data.accent ?? "#f29c7a";
+const metaBits = [
+  sectionLabel,
+  "readingTime" in entry.data ? entry.data.readingTime : undefined,
+  "medium" in entry.data ? entry.data.medium : undefined,
+  "prepTime" in entry.data ? entry.data.prepTime : undefined,
+  "category" in entry.data ? entry.data.category : undefined
+].filter(Boolean);
+---
+
+<article class="entry-card" style={`--card-accent: ${accent};`}>
+  <p class="card-meta">{formatDate(entry.data.date)}</p>
+  <h3><a href={href}>{entry.data.title}</a></h3>
+  <p>{entry.data.summary}</p>
+  <div class="card-footer">
+    <span>{metaBits.join(" · ")}</span>
+    <a href={href} class="inline-link">Read more</a>
+  </div>
+</article>

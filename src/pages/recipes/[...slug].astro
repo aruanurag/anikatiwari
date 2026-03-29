@@ -1,0 +1,32 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import EntryLayout from "../../layouts/EntryLayout.astro";
+
+export async function getStaticPaths() {
+  const recipes = await getCollection("recipes");
+
+  return recipes.map((entry: CollectionEntry<"recipes">) => ({
+    params: { slug: entry.slug },
+    props: { entry }
+  }));
+}
+
+interface Props {
+  entry: CollectionEntry<"recipes">;
+}
+
+const { entry } = Astro.props as Props;
+const { Content } = await entry.render();
+
+const details = [
+  { label: "Prep time", value: entry.data.prepTime },
+  ...(entry.data.cookTime ? [{ label: "Cook time", value: entry.data.cookTime }] : []),
+  { label: "Serves", value: entry.data.servings },
+  { label: "Best for", value: entry.data.favoriteFor }
+];
+---
+
+<EntryLayout entry={entry} sectionLabel="Recipes" sectionHref="/recipes" details={details}>
+  <Content />
+</EntryLayout>

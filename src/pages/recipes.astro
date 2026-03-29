@@ -1,11 +1,27 @@
 ---
-import '../layouts/BaseLayout.astro';
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import EntryCard from "../components/EntryCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { sortByDateDesc } from "../utils/content";
+
+const recipes: CollectionEntry<"recipes">[] = sortByDateDesc(await getCollection("recipes"));
 ---
 
-<BaseLayout>
-  <h2>Recipes</h2>
-  <p>Try out the delicious recipes by Anika!</p>
-  <section>
-    <p>This is where recipes will go.</p>
+<BaseLayout title="Recipes" description="Recipes and kitchen favorites I love making and sharing.">
+  <section class="section-hero">
+    <p class="eyebrow">Recipes</p>
+    <h1>Favorite things to bake, stir, sprinkle, and share.</h1>
+    <p class="lead">
+      These are cozy, family-friendly recipes with plenty of sweetness, creativity, and joy in the process.
+    </p>
+  </section>
+
+  <section class="section-block">
+    <div class="entry-grid">
+      {recipes.map((recipe) => (
+        <EntryCard entry={recipe} href={`/recipes/${recipe.slug}/`} sectionLabel="Recipe" />
+      ))}
+    </div>
   </section>
 </BaseLayout>

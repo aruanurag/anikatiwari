@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="A decorative A for Anika">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffbf8d" />
+      <stop offset="100%" stop-color="#7bb8f5" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#fff8f2" />
+  <circle cx="16" cy="14" r="6" fill="#f28f97" />
+  <path d="M32 14 47 50h-7l-3-8H26l-3 8h-7zm0 12-4 11h8z" fill="url(#g)" />
+</svg>

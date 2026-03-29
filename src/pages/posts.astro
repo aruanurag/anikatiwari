@@ -1,0 +1,28 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCollection } from "astro:content";
+import EntryCard from "../components/EntryCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { sortByDateDesc } from "../utils/content";
+
+const posts: CollectionEntry<"posts">[] = sortByDateDesc(await getCollection("posts"));
+---
+
+<BaseLayout title="Posts" description="Notes and blog-style posts from my creative notebook.">
+  <section class="section-hero">
+    <p class="eyebrow">Posts</p>
+    <h1>Behind-the-scenes notes from a creative notebook.</h1>
+    <p class="lead">
+      These are my thoughts on making things, favorite ideas from recent projects, and little
+      updates from my creative adventures.
+    </p>
+  </section>
+
+  <section class="section-block">
+    <div class="entry-grid">
+      {posts.map((post) => (
+        <EntryCard entry={post} href={`/posts/${post.slug}/`} sectionLabel="Post" />
+      ))}
+    </div>
+  </section>
+</BaseLayout>

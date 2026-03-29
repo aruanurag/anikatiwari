@@ -1,0 +1,18 @@
+---
+interface Props {
+  href: string;
+  title: string;
+  description: string;
+  accent: string;
+  kicker: string;
+}
+
+const { href, title, description, accent, kicker } = Astro.props;
+---
+
+<a class="collection-card" href={href} style={`--card-accent: ${accent};`}>
+  <span class="collection-kicker">{kicker}</span>
+  <h3>{title}</h3>
+  <p>{description}</p>
+  <span class="collection-arrow">Explore</span>
+</a>
