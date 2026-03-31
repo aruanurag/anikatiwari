@@ -1,0 +1,494 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Games"
+  description="A playful Number 24 game where kids tap two numbers and an operation to build 24."
+>
+  <section class="section-hero">
+    <p class="eyebrow">Games</p>
+    <h1>Can you make 24?</h1>
+    <p class="lead">
+      Tap one number, tap an operation, then tap another number. The two numbers will turn
+      into the result. Keep going until you have one number left, and try to make it 24.
+    </p>
+  </section>
+
+  <section class="section-block">
+    <div class="game-shell">
+      <div class="game-panel game-panel-primary">
+        <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
+        <div class="game-header">
+          <div>
+            <p class="eyebrow">Number 24</p>
+            <h2 class="game-title">Pick. Combine. Reach 24.</h2>
+          </div>
+          <button class="button button-secondary game-button" id="new-round" type="button">
+            New round
+          </button>
+        </div>
+
+        <div class="game-status-row">
+          <div class="game-stat">
+            <span class="game-stat-label">Streak</span>
+            <strong id="streak">0</strong>
+          </div>
+          <div class="game-stat">
+            <span class="game-stat-label">Best streak</span>
+            <strong id="best-streak">0</strong>
+          </div>
+          <div class="game-stat">
+            <span class="game-stat-label">Target</span>
+            <strong>24</strong>
+          </div>
+        </div>
+
+        <div class="selection-banner" id="selection-banner">
+          Pick a number to get started.
+        </div>
+
+        <div class="number-grid game-number-grid" id="number-grid" aria-label="Numbers for this round"></div>
+
+        <div class="operation-panel">
+          <p class="game-label">Operation</p>
+          <div class="operation-grid" id="operation-grid" aria-label="Choose an operation">
+            {[
+              { label: "+", value: "+" },
+              { label: "-", value: "-" },
+              { label: "x", value: "*" },
+              { label: "/", value: "/" }
+            ].map((operation) => (
+              <button class="operation-tile" data-op={operation.value} type="button">
+                {operation.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="game-actions">
+          <button class="button button-secondary game-button" id="undo-move" type="button">
+            Undo move
+          </button>
+          <button class="button button-secondary game-button" id="restart-round" type="button">
+            Restart round
+          </button>
+          <button class="button button-secondary game-button" id="show-solution" type="button">
+            Reveal solution
+          </button>
+        </div>
+
+        <div class="move-history-card">
+          <p class="game-label">Moves</p>
+          <div class="move-history" id="move-history">No moves yet.</div>
+        </div>
+
+        <div class="game-message" id="game-message" aria-live="polite"></div>
+      </div>
+
+      <aside class="game-panel game-panel-side">
+        <p class="eyebrow">How to play</p>
+        <ul class="game-rules">
+          <li>Tap one number tile.</li>
+          <li>Tap `+`, `-`, `x`, or `/`.</li>
+          <li>Tap a second number tile.</li>
+          <li>The two tiles will turn into one new tile.</li>
+          <li>Use all the numbers and finish with exactly 24.</li>
+        </ul>
+
+        <div class="hint-card">
+          <p class="game-stat-label">Current round</p>
+          <p id="round-note">Every puzzle on this page has a real solution.</p>
+        </div>
+
+        <div class="hint-card">
+          <p class="game-stat-label">Solution</p>
+          <p id="solution-text">Hidden until you ask for it.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <script>
+    // @ts-nocheck
+    const numberGrid = document.getElementById("number-grid");
+    const message = document.getElementById("game-message");
+    const moveHistory = document.getElementById("move-history");
+    const selectionBanner = document.getElementById("selection-banner");
+    const solutionText = document.getElementById("solution-text");
+    const streakEl = document.getElementById("streak");
+    const bestStreakEl = document.getElementById("best-streak");
+    const confettiLayer = document.getElementById("confetti-layer");
+    const gamePanelPrimary = document.querySelector(".game-panel-primary");
+    const operationButtons = Array.from(document.querySelectorAll("[data-op]"));
+    const bestKey = "number24-best-streak";
+
+    let originalNumbers = [];
+    let currentNodes = [];
+    let currentSolution = "";
+    let selectedFirstId = null;
+    let selectedOperation = null;
+    let moveStack = [];
+    let nextId = 1;
+    let streak = 0;
+    let bestStreak = Number.parseInt(localStorage.getItem(bestKey) ?? "0", 10) || 0;
+    let autoAdvanceTimer = null;
+
+    bestStreakEl.textContent = String(bestStreak);
+
+    function formatValue(value) {
+      if (Math.abs(value - Math.round(value)) < 1e-9) {
+        return String(Math.round(value));
+      }
+      return Number(value.toFixed(2)).toString();
+    }
+
+    function setMessage(text, tone = "neutral") {
+      message.textContent = text;
+      message.dataset.tone = tone;
+    }
+
+    function celebrateWin() {
+      window.clearTimeout(autoAdvanceTimer);
+      confettiLayer.innerHTML = "";
+      gamePanelPrimary?.classList.remove("celebrating");
+      void gamePanelPrimary?.offsetWidth;
+      gamePanelPrimary?.classList.add("celebrating");
+
+      const icons = ["🎉", "🎊", "✨", "⭐", "🎈", "🌟", "🥳"];
+
+      for (let i = 0; i < 44; i += 1) {
+        const piece = document.createElement("span");
+        piece.className = "confetti-piece";
+        piece.textContent = icons[i % icons.length];
+        piece.style.left = `${6 + Math.random() * 88}%`;
+        piece.style.top = `${8 + Math.random() * 34}%`;
+        piece.style.animationDelay = `${Math.random() * 0.25}s`;
+        piece.style.animationDuration = `${1.8 + Math.random() * 1.5}s`;
+        piece.style.fontSize = `${1.4 + Math.random() * 1.3}rem`;
+        piece.style.setProperty("--burst-x", `${(Math.random() > 0.5 ? 1 : -1) * (160 + Math.random() * 260)}px`);
+        piece.style.setProperty("--burst-y", `${-120 - Math.random() * 220}px`);
+        piece.style.setProperty("--drop-y", `${230 + Math.random() * 220}px`);
+        piece.style.setProperty("--spin", `${(Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 420)}deg`);
+        confettiLayer.appendChild(piece);
+      }
+
+      window.setTimeout(() => {
+        confettiLayer.innerHTML = "";
+        gamePanelPrimary?.classList.remove("celebrating");
+      }, 3600);
+    }
+
+    function setBanner() {
+      if (selectedFirstId === null) {
+        selectionBanner.textContent = "Pick your first number.";
+        return;
+      }
+
+      const first = currentNodes.find((node) => node.id === selectedFirstId);
+      if (!first) {
+        selectedFirstId = null;
+        selectedOperation = null;
+        selectionBanner.textContent = "Pick your first number.";
+        return;
+      }
+
+      if (!selectedOperation) {
+        selectionBanner.textContent = `You picked ${formatValue(first.value)}. Now choose an operation.`;
+        return;
+      }
+
+      const label = selectedOperation === "*" ? "x" : selectedOperation;
+      selectionBanner.textContent =
+        `Now tap a second number to do ${formatValue(first.value)} ${label} ?`;
+    }
+
+    function updateHistory() {
+      if (!moveStack.length) {
+        moveHistory.textContent = "No moves yet.";
+        return;
+      }
+
+      moveHistory.innerHTML = "";
+      moveStack.forEach((move) => {
+        const chip = document.createElement("div");
+        chip.className = "move-chip";
+        chip.textContent = move.label;
+        moveHistory.appendChild(chip);
+      });
+    }
+
+    function updateOperationButtons() {
+      operationButtons.forEach((button) => {
+        const active = button.getAttribute("data-op") === selectedOperation;
+        button.classList.toggle("active", active);
+      });
+    }
+
+    function renderNumbers() {
+      numberGrid.innerHTML = "";
+
+      currentNodes.forEach((node) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "number-tile";
+        if (node.id === selectedFirstId) {
+          button.classList.add("active");
+        }
+
+        const value = document.createElement("span");
+        value.className = "number-value";
+        value.textContent = formatValue(node.value);
+
+        const note = document.createElement("span");
+        note.className = "number-note";
+        note.textContent = node.source;
+
+        button.appendChild(value);
+        button.appendChild(note);
+
+        button.addEventListener("click", () => {
+          if (selectedFirstId === null) {
+            selectedFirstId = node.id;
+            setBanner();
+            renderNumbers();
+            return;
+          }
+
+          if (selectedFirstId === node.id) {
+            selectedFirstId = null;
+            selectedOperation = null;
+            updateOperationButtons();
+            setBanner();
+            renderNumbers();
+            return;
+          }
+
+          if (!selectedOperation) {
+            selectedFirstId = node.id;
+            setBanner();
+            renderNumbers();
+            return;
+          }
+
+          applyMove(selectedFirstId, selectedOperation, node.id);
+        });
+
+        numberGrid.appendChild(button);
+      });
+    }
+
+    function calculate(leftValue, operation, rightValue) {
+      if (operation === "+") return leftValue + rightValue;
+      if (operation === "-") return leftValue - rightValue;
+      if (operation === "*") return leftValue * rightValue;
+      if (operation === "/") {
+        if (Math.abs(rightValue) < 1e-9) {
+          return null;
+        }
+        return leftValue / rightValue;
+      }
+      return null;
+    }
+
+    function evaluateRoundEnd() {
+      if (currentNodes.length !== 1) {
+        return;
+      }
+
+      const finalValue = currentNodes[0].value;
+      if (Math.abs(finalValue - 24) < 1e-9) {
+        streak += 1;
+        bestStreak = Math.max(bestStreak, streak);
+        localStorage.setItem(bestKey, String(bestStreak));
+        streakEl.textContent = String(streak);
+        bestStreakEl.textContent = String(bestStreak);
+        celebrateWin();
+        setMessage("You did it! You made 24.", "success");
+        selectionBanner.textContent = "Amazing job. Next round is starting...";
+        autoAdvanceTimer = window.setTimeout(() => {
+          newRound();
+        }, 3200);
+      } else {
+        streak = 0;
+        streakEl.textContent = "0";
+        setMessage(`Close one. You ended on ${formatValue(finalValue)} instead of 24.`, "error");
+        selectionBanner.textContent = "Try Undo move or Restart round to have another go.";
+      }
+    }
+
+    function applyMove(firstId, operation, secondId) {
+      const first = currentNodes.find((node) => node.id === firstId);
+      const second = currentNodes.find((node) => node.id === secondId);
+      if (!first || !second) return;
+
+      const result = calculate(first.value, operation, second.value);
+      if (result === null || !Number.isFinite(result)) {
+        setMessage("That move does not work. Try a different pair.", "error");
+        return;
+      }
+
+      moveStack.push({
+        nodes: currentNodes.map((node) => ({ ...node })),
+        label: `${formatValue(first.value)} ${operation === "*" ? "x" : operation} ${formatValue(second.value)} = ${formatValue(result)}`
+      });
+
+      const replacementNode = {
+        id: nextId,
+        value: result,
+        expr: `(${first.expr} ${operation} ${second.expr})`,
+        source: `${formatValue(first.value)} ${operation === "*" ? "x" : operation} ${formatValue(second.value)}`
+      };
+
+      currentNodes = currentNodes.flatMap((node) => {
+        if (node.id === firstId) {
+          return [];
+        }
+
+        if (node.id === secondId) {
+          return [replacementNode];
+        }
+
+        return [node];
+      });
+
+      nextId += 1;
+      selectedFirstId = replacementNode.id;
+      selectedOperation = null;
+      updateOperationButtons();
+      updateHistory();
+      renderNumbers();
+      setBanner();
+      setMessage(`Nice move: ${formatValue(result)}.`, "neutral");
+      evaluateRoundEnd();
+    }
+
+    function solve24(numbers) {
+      const items = numbers.map((value) => ({ value, expr: String(value) }));
+      const epsilon = 1e-9;
+
+      function search(nodes) {
+        if (nodes.length === 1) {
+          return Math.abs(nodes[0].value - 24) < epsilon ? nodes[0].expr : null;
+        }
+
+        for (let i = 0; i < nodes.length; i += 1) {
+          for (let j = 0; j < nodes.length; j += 1) {
+            if (i === j) continue;
+
+            const rest = nodes.filter((_, index) => index !== i && index !== j);
+            const a = nodes[i];
+            const b = nodes[j];
+            const candidates = [
+              { value: a.value + b.value, expr: `(${a.expr} + ${b.expr})` },
+              { value: a.value - b.value, expr: `(${a.expr} - ${b.expr})` },
+              { value: a.value * b.value, expr: `(${a.expr} * ${b.expr})` }
+            ];
+
+            if (Math.abs(b.value) > epsilon) {
+              candidates.push({ value: a.value / b.value, expr: `(${a.expr} / ${b.expr})` });
+            }
+
+            for (const candidate of candidates) {
+              const found = search([...rest, candidate]);
+              if (found) return found;
+            }
+          }
+        }
+
+        return null;
+      }
+
+      return search(items);
+    }
+
+    function startRound(numbers, solution) {
+      window.clearTimeout(autoAdvanceTimer);
+      originalNumbers = [...numbers];
+      currentNodes = numbers.map((value) => ({
+        id: nextId++,
+        value,
+        expr: String(value),
+        source: "original"
+      }));
+      currentSolution = solution;
+      selectedFirstId = null;
+      selectedOperation = null;
+      moveStack = [];
+      solutionText.textContent = "Hidden until you ask for it.";
+      updateOperationButtons();
+      updateHistory();
+      renderNumbers();
+      setBanner();
+      setMessage("A new puzzle is ready.", "neutral");
+    }
+
+    function newRound() {
+      let next = null;
+      for (let attempt = 0; attempt < 400; attempt += 1) {
+        const numbers = Array.from({ length: 4 }, () => Math.floor(Math.random() * 9) + 1);
+        const solution = solve24(numbers);
+        if (solution) {
+          next = { numbers, solution };
+          break;
+        }
+      }
+
+      if (!next) {
+        setMessage("I could not build a new round just now. Try again.", "error");
+        return;
+      }
+
+      startRound(next.numbers, next.solution);
+    }
+
+    function restartRound() {
+      if (!originalNumbers.length) return;
+      streak = 0;
+      streakEl.textContent = "0";
+      startRound(originalNumbers, currentSolution);
+      setMessage("Round restarted.", "neutral");
+    }
+
+    function undoMove() {
+      const previous = moveStack.pop();
+      if (!previous) {
+        setMessage("There is nothing to undo yet.", "error");
+        return;
+      }
+
+      currentNodes = previous.nodes.map((node) => ({ ...node }));
+      selectedFirstId = null;
+      selectedOperation = null;
+      updateOperationButtons();
+      updateHistory();
+      renderNumbers();
+      setBanner();
+      setMessage("Last move undone.", "neutral");
+    }
+
+    document.getElementById("new-round")?.addEventListener("click", newRound);
+    document.getElementById("restart-round")?.addEventListener("click", restartRound);
+    document.getElementById("undo-move")?.addEventListener("click", undoMove);
+    document.getElementById("show-solution")?.addEventListener("click", () => {
+      solutionText.textContent = currentSolution;
+      setMessage("Solution revealed.", "neutral");
+    });
+
+    operationButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (selectedFirstId === null) {
+          setMessage("Pick a number first.", "error");
+          return;
+        }
+
+        selectedOperation = button.getAttribute("data-op");
+        updateOperationButtons();
+        setBanner();
+        setMessage("Now pick the second number.", "neutral");
+      });
+    });
+
+    newRound();
+  </script>
+</BaseLayout>
